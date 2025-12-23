@@ -17,9 +17,60 @@ from sklearn.metrics import (
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# 设置matplotlib中文字体支持
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']  # 用来正常显示中文标签
-plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+# 设置matplotlib中文字体支持（跨平台）
+import platform
+from matplotlib import font_manager
+
+def setup_chinese_font():
+    """设置中文字体，自动检测系统可用字体"""
+    system = platform.system()
+    
+    # 各平台推荐的中文字体列表
+    if system == 'Windows':
+        font_candidates = ['SimHei', 'Microsoft YaHei', 'KaiTi', 'FangSong']
+    elif system == 'Linux':
+        font_candidates = ['WenQuanYi Micro Hei', 'Noto Sans CJK SC', 
+                          'Droid Sans Fallback', 'WenQuanYi Zen Hei', 
+                          'AR PL UMing CN', 'AR PL UKai CN', 'Source Han Sans CN']
+    elif system == 'Darwin':  # macOS
+        font_candidates = ['PingFang SC', 'STHeiti', 'Arial Unicode MS', 'Heiti SC']
+    else:
+        font_candidates = []
+    
+    # 获取系统中所有可用字体
+    available_fonts = [f.name for f in font_manager.fontManager.ttflist]
+    
+    # 查找可用的中文字体
+    found_font = None
+    for font in font_candidates:
+        if font in available_fonts:
+            found_font = font
+            break
+    
+    # 如果没有找到推荐字体，尝试查找包含CJK或中文相关的字体
+    if not found_font:
+        for font_name in available_fonts:
+            font_lower = font_name.lower()
+            if any(keyword in font_lower for keyword in ['cjk', 'chinese', 'han', 'wenquanyi', 'noto']):
+                found_font = font_name
+                break
+    
+    # 设置字体
+    if found_font:
+        plt.rcParams['font.sans-serif'] = [found_font] + plt.rcParams['font.sans-serif']
+        print(f"使用中文字体: {found_font}")
+    else:
+        # 如果找不到中文字体，使用默认字体并给出警告
+        print("警告: 未找到中文字体，中文可能显示为方块。建议安装中文字体，如：")
+        if system == 'Linux':
+            print("  sudo apt-get install fonts-wqy-microhei fonts-wqy-zenhei")
+            print("  或: sudo apt-get install fonts-noto-cjk")
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+    
+    plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
+
+# 初始化中文字体
+setup_chinese_font()
 
 import sys
 import os

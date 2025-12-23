@@ -75,7 +75,28 @@ python -m spacy download zh_core_web_sm
 python -m spacy download en_core_web_sm
 ```
 
-4. **验证安装**
+4. **安装中文字体（Linux系统，用于图像中文显示）**
+   
+   如果使用Linux系统，需要安装中文字体以确保评估结果图像中的中文正常显示：
+   
+   **Ubuntu/Debian:**
+   ```bash
+   sudo apt-get update
+   sudo apt-get install fonts-wqy-microhei fonts-wqy-zenhei
+   # 或者安装Noto字体
+   sudo apt-get install fonts-noto-cjk
+   ```
+   
+   **CentOS/RHEL:**
+   ```bash
+   sudo yum install wqy-microhei-fonts wqy-zenhei-fonts
+   # 或者安装Noto字体
+   sudo yum install google-noto-cjk-fonts
+   ```
+   
+   Windows和macOS系统通常已包含中文字体，无需额外安装。
+
+5. **验证安装**
 ```bash
 python -c "import torch; import transformers; print('安装成功！')"
 ```
@@ -269,6 +290,23 @@ python train.py --data_path ./CFND_dataset --dataset_type cfnd --batch_size 4 --
 - 检查网络连接
 - 验证知识库API配置
 - 查看日志文件获取详细错误信息
+
+### Q6: 评估结果图像中中文显示为方块
+
+**解决方案：**
+- **Linux系统**：安装中文字体
+  ```bash
+  # Ubuntu/Debian
+  sudo apt-get install fonts-wqy-microhei fonts-wqy-zenhei
+  # 或
+  sudo apt-get install fonts-noto-cjk
+  ```
+- **验证字体安装**：运行评估脚本时，会输出使用的字体名称
+- 如果仍无法显示，检查matplotlib字体缓存：
+  ```bash
+  python -c "import matplotlib; print(matplotlib.get_cachedir())"
+  rm -rf ~/.cache/matplotlib
+  ```
 
 ## 📝 依赖包
 
