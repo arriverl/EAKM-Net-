@@ -89,7 +89,11 @@ python -c "import torch; import transformers; print('安装成功！')"
 - **测试集**：用于最终性能评估
 
 数据集格式：
-- CSV文件包含：`id`, `text`, `image_path`, `label` 等字段
+- **总数据量**：26,665条新闻
+- **真实新闻**：16,394条
+- **虚假新闻**：10,271条
+- **数据划分**：训练集60%，验证集20%，测试集20%
+- CSV文件包含：`num`, `title`, `image`, `label` 等字段
 - 图像文件存储在 `CFND_dataset/images/` 目录下
 - `label`: 0 表示真实新闻，1 表示虚假新闻
 
@@ -109,62 +113,47 @@ python data_preprocessing.py \
 
 ### 模型训练
 
-**基本训练命令：**
+**使用CFND数据集训练：**
 ```bash
 python train.py \
-    --data_dir CFND_dataset \
-    --batch_size 32 \
-    --epochs 50 \
-    --learning_rate 1e-4 \
-    --save_dir checkpoints
-```
-
-**完整训练参数：**
-```bash
-python train.py \
-    --data_dir CFND_dataset \
-    --train_file train_data.csv \
-    --val_file val_data.csv \
-    --batch_size 32 \
-    --epochs 50 \
-    --learning_rate 1e-4 \
-    --weight_decay 1e-5 \
-    --num_workers 4 \
-    --save_dir checkpoints \
-    --save_freq 5 \
-    --log_freq 100 \
-    --device cuda \
-    --seed 42
+    --data_path ./CFND_dataset \
+    --dataset_type cfnd \
+    --text_model bert-base-chinese \
+    --batch_size 8 \
+    --num_epochs 50 \
+    --learning_rate 2e-5 \
+    --model_save_dir ./checkpoints
 ```
 
 **主要参数说明：**
-- `--data_dir`: 数据集根目录
-- `--batch_size`: 批次大小（根据GPU内存调整）
-- `--epochs`: 训练轮数
-- `--learning_rate`: 学习率
-- `--save_dir`: 模型保存目录
-- `--device`: 设备类型（cuda/cpu）
+- `--data_path`: CFND数据集目录路径（包含train_data.csv等文件）
+- `--dataset_type`: 数据集类型，使用CFND数据集时设置为 `cfnd`
+- `--text_model`: 文本模型，**使用CFND数据集时必须使用 `bert-base-chinese`**
+- `--batch_size`: 批次大小（根据GPU内存调整，建议8-32）
+- `--num_epochs`: 训练轮数
+- `--learning_rate`: 学习率（建议2e-5）
+- `--model_save_dir`: 模型保存目录
+- `--use_entities`: 是否使用实体识别（需要安装中文spaCy模型）
+- `--device`: 设备类型（cuda/cpu，默认cuda）
 
 ### 模型评估
 
-**基本评估命令：**
+**评估CFND测试集：**
 ```bash
 python evaluate.py \
-    --checkpoint checkpoints/best_model.pth \
-    --test_file CFND_dataset/test_data.csv \
-    --data_dir CFND_dataset
+    --model_path ./checkpoints/best_model.pth \
+    --data_path ./CFND_dataset \
+    --text_model bert-base-chinese \
+    --batch_size 8 \
+    --output_dir ./results
 ```
 
-**完整评估参数：**
-```bash
-python evaluate.py \
-    --checkpoint checkpoints/best_model.pth \
-    --test_file CFND_dataset/test_data.csv \
-    --data_dir CFND_dataset \
-    --batch_size 32 \
-    --device cuda \
-    --output_dir results
-```
+**主要参数说明：**
+- `--model_path`: 训练好的模型路径
+- `--data_path`: CFND数据集目录路径（会自动识别test_data.csv）
+- `--text_model`: 文本模型，必须与训练时使用的模型一致（`bert-base-chinese`）
+- `--batch_size`: 批次大小
+- `--output_dir`: 结果保存目录（包含评估报告和可视化图表）
 
 评估指标包括：
 - **准确率 (Accuracy)**
@@ -244,25 +233,26 @@ EAKM-Net (Entity-Aligned Knowledge-Enhanced Multimodal Network) 主要包含以�
 ### Q1: 内存不足（Out of Memory）
 
 **解决方案：**
-- 减小 `batch_size`
-- 使用梯度累积
-- 使用混合精度训练
+- 减小 `batch_size`（如改为4或2）
+- 禁用实体识别（不使用 `--use_entities` 参数）
+- 使用更小的模型
 
 ```bash
-python train.py --batch_size 16 --gradient_accumulation_steps 2
+python train.py --data_path ./CFND_dataset --dataset_type cfnd --batch_size 4 --no_entities
 ```
 
 ### Q2: 训练速度慢
 
 **解决方案：**
 - 使用GPU训练（`--device cuda`）
-- 增加 `num_workers` 数量
-- 使用预训练模型权重
+- 减小batch_size（如改为4或2）
+- 使用预训练的BERT模型（会自动下载）
 
 ### Q3: 实体识别失败
 
 **解决方案：**
-- 确保已安装spaCy模型
+- 安装中文spaCy模型：`python -m spacy download zh_core_web_sm`
+- 或者禁用实体识别：训练时不使用 `--use_entities` 参数
 - 检查语言设置（中文/英文）
 - 验证文本编码格式
 

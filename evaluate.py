@@ -95,6 +95,7 @@ def evaluate(
             use_entities=True,
             image_size=224
         )
+        test_dataset = test_loader.dataset  # 为了统一后续使用
         print(f"测试集大小: {len(test_loader.dataset)}")
     else:
         # CSV文件
